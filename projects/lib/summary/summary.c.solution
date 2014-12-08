@@ -1,0 +1,167 @@
+/*
+ * File: summary.c
+ *
+ * Description:
+ *   This is where you implement your project 3 support.
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* LLVM Header Files */
+#include "llvm-c/Core.h"
+#include "dominance.h"
+
+/* Header file global to this project */
+#include "summary.h"
+#include "valmap.h"
+
+typedef struct Stats_def {
+  int functions;
+  int globals;
+  int bbs;
+  int insns;
+  int insns_bb_deps;
+  int insns_g_deps;
+  int branches;
+  int loads;
+  int stores;
+  int calls;
+  int loops; //approximated by backedges
+} Stats;
+
+void pretty_print_stats(FILE *f, Stats s, int spaces)
+{
+  char spc[128];
+  int i;
+
+  // insert spaces before each line
+  for(i=0; i<spaces; i++)
+    spc[i] = ' ';
+  spc[i] = '\0';
+    
+  fprintf(f,"%sFunctions.......................%d\n",spc,s.functions);
+  fprintf(f,"%sGlobal Vars.....................%d\n",spc,s.globals);
+  fprintf(f,"%sBasic Blocks....................%d\n",spc,s.bbs);
+  fprintf(f,"%sInstructions....................%d\n",spc,s.insns);
+  fprintf(f,"%sInstructions (bb deps)..........%d\n",spc,s.insns_bb_deps);
+  fprintf(f,"%sInstructions (g/c deps).........%d\n",spc,s.insns_g_deps);
+  fprintf(f,"%sInstructions - Branches.........%d\n",spc,s.branches);
+  fprintf(f,"%sInstructions - Loads............%d\n",spc,s.loads);
+  fprintf(f,"%sInstructions - Stores...........%d\n",spc,s.stores);
+  fprintf(f,"%sInstructions - Calls............%d\n",spc,s.calls);
+  fprintf(f,"%sInstructions - Other............%d\n",spc,
+	  s.insns-s.branches-s.loads-s.stores);
+  fprintf(f,"%sLoops...........................%d\n",spc,s.loops);
+}
+
+void print_csv_file(const char *filename, Stats s, const char *id)
+{
+  FILE *f = fopen(filename,"w");
+  fprintf(f,"id,%s\n",id);
+  fprintf(f,"functions,%d\n",s.functions);
+  fprintf(f,"globals,%d\n",s.globals);
+  fprintf(f,"bbs,%d\n",s.bbs);
+  fprintf(f,"insns,%d\n",s.insns);
+  fprintf(f,"insns_bb_deps,%d\n",s.insns_bb_deps);
+  fprintf(f,"insns_g_deps,%d\n",s.insns_g_deps);
+  fprintf(f,"branches,%d\n",s.branches);
+  fprintf(f,"loads,%d\n",s.loads);
+  fprintf(f,"stores,%d\n",s.stores);
+  fprintf(f,"calls,%d\n",s.calls);
+  fprintf(f,"loops,%d\n",s.loops);
+  fclose(f);
+}
+
+Stats MyStats;
+
+void
+Summarize(LLVMModuleRef Module, const char *id, const char* filename)
+{
+  LLVMValueRef F;
+  LLVMValueRef G;
+  LLVMBasicBlockRef BB;
+  LLVMValueRef I;
+
+  valmap_t map = valmap_create();
+
+  for(F=LLVMGetFirstFunction(Module); 
+      F!=NULL;
+      F=LLVMGetNextFunction(F))
+    {
+      if (LLVMGetFirstBasicBlock(F)!=NULL) {
+      	// count functions
+	MyStats.functions++;
+
+	for(BB=LLVMGetFirstBasicBlock(F);
+	    BB!=NULL;
+	    BB=LLVMGetNextBasicBlock(BB))
+	  {
+	    // count basic blocks
+	    MyStats.bbs++;
+
+	    for(I=LLVMGetFirstInstruction(BB);
+		I!=NULL;
+		I=LLVMGetNextInstruction(I)) 
+	      {
+	        // count instructions
+		MyStats.insns++;
+
+		// count terminators
+		if (LLVMIsATerminatorInst(I) && !LLVMIsAUnreachableInst(I))
+		  MyStats.branches++;
+
+		// count loads
+		if (LLVMIsALoadInst(I))
+		  MyStats.loads++;
+
+		// count stores
+		if (LLVMIsAStoreInst(I))
+		  MyStats.stores++;
+
+		// count calls
+		if (LLVMIsACallInst(I))
+		  MyStats.calls++;
+
+		// count loops
+		if (LLVMIsATerminatorInst(I)) {
+		  int i;
+		  for(i=0; i<LLVMGetNumOperands(I); i++) {
+		    LLVMValueRef op = LLVMGetOperand(I,i);
+		    if(LLVMIsABasicBlock(op)) {
+		      LLVMBasicBlockRef bb = LLVMValueAsBasicBlock(op);
+		      // if bb dominates BB and haven't already put it in map
+		      if(LLVMDominates(F,bb,BB) && !valmap_check(map,op)) {
+			// found a loop, remember this header
+			valmap_insert(map,op,NULL);
+			MyStats.loops++;
+		      }
+
+		    }
+		  }
+
+		}
+
+	      }
+	    
+	  }
+
+
+
+      }
+    }
+
+  
+  for(G=LLVMGetFirstGlobal(Module);
+      G!=NULL;
+      G=LLVMGetNextGlobal(G)) {
+    if (LLVMGetInitializer(G))
+      MyStats.globals++;
+    
+  }
+
+  //pretty_print_stats(stdout,MyStats,0);
+  print_csv_file(filename,MyStats,id);
+}
+

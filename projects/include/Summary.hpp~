@@ -1,0 +1,10 @@
+#ifndef SUMMARY_HPP
+#define SUMMARY_HPP
+
+#include "llvm/LLVMContext.h"
+#include "llvm/Value.h"
+#include "llvm/Module.h"
+
+void Summarize_Cpp(llvm::Module *M, const char *id, const char *filename);
+
+#endif // SUMMARY_H
