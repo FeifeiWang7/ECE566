@@ -1,0 +1,37 @@
+###############################################################################
+# MiBench
+#   qsort
+###############################################################################
+#	BENCHMARK	-- standard definitions for this benchmark
+
+NUMBER    = 
+NAME      = qsort
+EXEBASE   = qsort
+BENCHLANG = C
+SOURCES   ?= qsort_large.c 
+NEED_MATH = yes
+
+# configurations for test
+TESTPROGRAMOPTIONS = 
+
+# sesc options
+SESCOPTIONS = -h0x6c00000
+
+#DSWP_FNAMES=rgb_ycc_convert,jpeg_fdct_islow
+
+include ../../../Make.defs   
+include ../../../Make.rules
+include $(BENCHDIR)/MiBench/Make.defs 
+
+
+FILE1 = qsort_small.c
+FILE2 = qsort_large.c
+
+#all: qsort_small qsort_large
+#qsort_small: qsort_small.c Makefile
+#	gcc -static qsort_small.c -O3 -o qsort_small -lm
+#qsort_large: qsort_large.c Makefile
+#	gcc -static qsort_large.c -O3 -o qsort_large -lm
+#
+#clean:
+#	rm -rf qsort_small qsort_large output*

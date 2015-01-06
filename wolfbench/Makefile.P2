@@ -1,0 +1,41 @@
+
+.SUFFIXES: .tune.bc .opt.bc .link.bc .bc
+.PRECIOUS: .tune.bc
+
+.PHONY: %-install
+
+ifdef DEBUG
+GDB = gdb --args 
+else
+GDB = 
+endif
+
+%: %.all.bc
+ifdef CLANG
+	@$(CLANG) $(LIBS) $(HEADERS) -o $@ $^
+else
+	@$(LLC) -o $(addsuffix .s,$@) $^
+	@$(GCC) $(LIBS) $(HEADERS) -o $@ $(addsuffix .s,$@)	
+endif
+
+%.all.bc: %.bc %-p2.bc
+	@$(LLVM_LINK) -o $@ $^	  
+
+%-p2.bc:%.p2
+ifdef VERBOSE
+	$(GDB) $(P2TOOL) -o $@ $<
+else
+	@$(GDB) $(P2TOOL) -o $@ $<
+endif
+
+clean:
+	@rm -Rf *.bc $(programs) *-test
+
+%-test:
+	@./$* > $@ 
+
+%-install:
+	@mkdir -p $(INSTALL_DIR)
+	@cp $* $(INSTALL_DIR)/$*$(EXTRA_SUFFIX)
+	@echo [installed $*$(EXTRA_SUFFIX)]
+

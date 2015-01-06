@@ -1,0 +1,10 @@
+int test_10(int x)
+{
+  int j;
+  int sum;
+  sum=0;
+  for(j=0; j<10; j=j+1)
+    sum = sum + x;
+
+  return sum;
+}

@@ -1,0 +1,30 @@
+# /* For copyright information, see olden_v1.01/COPYRIGHT */
+
+include @top_builddir@/Makefile.defs
+
+SRC_DIR=@abs_srcdir@
+INSTALL_DIR=@prefix@/bin
+
+vpath %.c $(SRC_DIR)
+vpath %.cpp $(SRC_DIR)
+
+programs = bisort
+
+.PHONY: all install
+
+all: $(programs)
+
+install: all $(addsuffix -install,$(programs))
+
+DEFS    = -U__GNUC__ -D_NO_LONGLONG -DNOTESTP -DONEONLY
+
+SOURCES = swap.c bitonic.c args.c
+
+bisort: $(SOURCES:.c=.bc)
+	@$(LLVM_LINK) -o $@.p3.bc $^
+	@$(CLANG) $(LIBS) $(HEADERS) -o $@ $@.p3.bc
+
+clean:
+	@rm -Rf *.bc $(programs)
+
+include @top_builddir@/Makefile.config

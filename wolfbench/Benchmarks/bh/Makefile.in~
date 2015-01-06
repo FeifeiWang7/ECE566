@@ -1,0 +1,24 @@
+# /* For copyright information, see olden_v1.01/COPYRIGHT */
+
+include @top_builddir@/Makefile.defs
+
+SRC_DIR=@abs_srcdir@
+INSTALL_DIR=@prefix@/bin
+
+vpath %.c $(SRC_DIR)
+vpath %.cpp $(SRC_DIR)
+
+programs = bh 
+
+.PHONY: all install
+
+all: $(programs)
+
+install: all $(addsuffix -install,$(programs))
+
+DEFS    = -U__GNUC__ -D_NO_LONGLONG
+
+SOURCES = newbh.c util.c args.c
+
+include @abs_top_srcdir@/Makefile.benchmark
+include @top_builddir@/Makefile.config

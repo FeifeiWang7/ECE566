@@ -1,0 +1,26 @@
+###############################################################################
+# MiBench
+#   patricia
+###############################################################################
+#	BENCHMARK	-- standard definitions for this benchmark
+
+NUMBER    = 
+NAME      = patricia
+EXEBASE   = patricia
+BENCHLANG = C
+SOURCES   ?= patricia.c patricia_test.c
+NEED_MATH = yes
+
+# configurations for test
+TESTPROGRAMOPTIONS = 
+
+# sesc options
+SESCOPTIONS = -h0x6c00000
+
+#DSWP_FNAMES=rgb_ycc_convert,jpeg_fdct_islow
+
+include ../../../Make.defs   
+include ../../../Make.rules
+include $(BENCHDIR)/MiBench/Make.defs 
+
+
